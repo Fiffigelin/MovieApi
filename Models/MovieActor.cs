@@ -3,13 +3,13 @@ using System;
 namespace MovieApi.Models;
 
 // kopplingstabell
-
 public class MovieActor
 {
   public Guid Id { get; set; }
-  public int MovieId { get; set; }
 
-  public int ActorId { get; set; }
+  public Guid MovieId { get; set; }
+
+  public Guid ActorId { get; set; }
 
   public string Role { get; set; } = string.Empty;
 

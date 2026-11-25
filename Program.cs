@@ -13,16 +13,18 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<MovieDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString(
-            "MovieDbConnection")));
+    options
+        .UseSqlServer(
+            builder.Configuration.GetConnectionString("MovieDbConnection"))
+        .UseSeeding((context, _) =>
+            MovieDbSeeder.Seed((MovieDbContext)context)));
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+  app.UseSwagger();
+  app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();

@@ -10,7 +10,7 @@ public class MovieDetails
 
   public string Language { get; set; } = string.Empty;
 
-  public decimal Budget { get; set; }
+  public int? Budget { get; set; } = 0;
 
   // FK till Movie
   public Guid MovieId { get; set; }
