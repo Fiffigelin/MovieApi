@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace MovieApi.DTOs.MovieDetail;
@@ -13,4 +14,6 @@ public class CreateMovieDetailsDto
   public required string Language { get; set; }
 
   public int? Budget { get; set; } = 0;
+
+  public Guid MovieId { get; set; }
 }

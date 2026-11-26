@@ -1,10 +1,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MovieApi.Data;
+using MovieApi.DTOs.MovieDetail;
 using MovieApi.Models;
 
 namespace MovieApi.Controllers;
@@ -22,63 +24,68 @@ public class MovieDetailsController : ControllerBase
 
   // GET: api/moviedetails
   [HttpGet]
-  public async Task<ActionResult<IEnumerable<MovieDetails>>> GetMovieDetails()
+  public async Task<ActionResult<IEnumerable<MovieDetailsDto>>> GetMovieDetails()
   {
-    var movieDetails = await _context.MovieDetails.ToListAsync();
+    var data = await _context.MovieDetails.ToListAsync();
 
-    return Ok(movieDetails);
+    var result = data.Select(MapEntityToDto).ToList();
+
+    return Ok(result);
   }
 
   // GET: api/moviedetails/{id}
   [HttpGet("{id}")]
-  public async Task<ActionResult<MovieDetails>> GetMovieDetail(Guid id)
+  public async Task<ActionResult<MovieDetailsDto>> GetMovieDetail(Guid id)
   {
-    var movieDetail = await _context.MovieDetails
+    var data = await _context.MovieDetails
         .FirstOrDefaultAsync(m => m.Id == id);
 
-    if (movieDetail == null)
+    if (data == null)
     {
       return NotFound();
     }
 
-    return Ok(movieDetail);
+    return Ok(MapEntityToDto(data));
   }
 
   // POST: api/moviedetails
   [HttpPost]
-  public async Task<ActionResult<MovieDetails>> CreateMovieDetail(MovieDetails movieDetail)
+  public async Task<ActionResult<MovieDetailsDto>> CreateMovieDetail(Guid movieId, CreateMovieDetailsDto dto)
   {
-    movieDetail.Id = Guid.NewGuid();
 
-    _context.MovieDetails.Add(movieDetail);
+    var data = MapDtoToEntity(movieId, dto);
+
+    _context.MovieDetails.Add(data);
     await _context.SaveChangesAsync();
+
+    var result = MapEntityToDto(data);
 
     return CreatedAtAction(
         nameof(GetMovieDetail),
-        new { id = movieDetail.Id },
-        movieDetail);
+        new { id = data.Id },
+        data);
   }
 
   // PUT: api/moviedetails/{id}
   [HttpPut("{id}")]
-  public async Task<IActionResult> UpdateMovieDetail(Guid id, MovieDetails movieDetail)
+  public async Task<IActionResult> UpdateMovieDetail(Guid id, UpdateMovieDetailsDto dto)
   {
-    if (id != movieDetail.Id)
-    {
-      return BadRequest();
-    }
 
-    var existingMovieDetail = await _context.MovieDetails.FindAsync(id);
+    var data = await _context.MovieDetails.FindAsync(id);
 
-    if (existingMovieDetail == null)
+    if (data == null)
     {
       return NotFound();
     }
 
-    existingMovieDetail.Synopsis = movieDetail.Synopsis;
-    existingMovieDetail.Language = movieDetail.Language;
-    existingMovieDetail.Budget = movieDetail.Budget;
-    existingMovieDetail.MovieId = movieDetail.MovieId;
+    if (id != data.Id)
+    {
+      return BadRequest();
+    }
+
+    data.Synopsis = dto.Synopsis;
+    data.Language = dto.Language;
+    data.Budget = dto.Budget;
 
     await _context.SaveChangesAsync();
 
@@ -100,5 +107,28 @@ public class MovieDetailsController : ControllerBase
     await _context.SaveChangesAsync();
 
     return NoContent();
+  }
+
+  private static MovieDetailsDto MapEntityToDto(MovieDetails movieDetails)
+  {
+    return new MovieDetailsDto()
+    {
+      Id = movieDetails.Id,
+      Synopsis = movieDetails.Synopsis,
+      Language = movieDetails.Language,
+      Budget = movieDetails.Budget,
+      MovieId = movieDetails.MovieId
+    };
+  }
+  private static MovieDetails MapDtoToEntity(Guid movieId, CreateMovieDetailsDto movieDetails)
+  {
+    return new MovieDetails()
+    {
+      Id = Guid.NewGuid(),
+      Synopsis = movieDetails.Synopsis,
+      Language = movieDetails.Language,
+      Budget = movieDetails.Budget,
+      MovieId = movieId
+    };
   }
 }

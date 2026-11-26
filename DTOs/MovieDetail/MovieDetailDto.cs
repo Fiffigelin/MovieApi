@@ -16,4 +16,6 @@ public class MovieDetailsDto
   public required string Language { get; set; }
 
   public int? Budget { get; set; } = 0;
+
+  public Guid MovieId { get; set; }
 }

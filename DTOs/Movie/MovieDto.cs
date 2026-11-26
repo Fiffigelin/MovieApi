@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using MovieApi.DTOs.MovieDetail;
 
 namespace MovieApi.DTOs.Movie;
 
@@ -18,5 +17,5 @@ public class MovieDto
 
   [Required]
   [ValidMovieDuration]
-  public required TimeSpan Durations { get; set; }
+  public required TimeSpan Duration { get; set; }
 }
