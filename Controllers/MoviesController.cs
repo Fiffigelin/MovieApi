@@ -1,10 +1,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MovieApi.Data;
+using MovieApi.DTOs.Movie;
 using MovieApi.Models;
 
 namespace MovieApi.Controllers;
@@ -24,60 +26,64 @@ public class MoviesController : ControllerBase
   [HttpGet]
   public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
   {
-    var movies = await _context.Movies.ToListAsync();
+    var data = await _context.Movies.ToListAsync();
 
-    return Ok(movies);
+    var result = data.Select(MapEntityToDto).ToList();
+
+    return Ok(result);
   }
 
   // GET: api/movies/{id}
   [HttpGet("{id}")]
-  public async Task<ActionResult<Movie>> GetMovie(Guid id)
+  public async Task<ActionResult<MovieDto>> GetMovie(Guid id)
   {
-    var movie = await _context.Movies
+    var data = await _context.Movies
         .FirstOrDefaultAsync(m => m.Id == id);
 
-    if (movie == null)
+    if (data == null)
     {
       return NotFound();
     }
 
-    return Ok(movie);
+    return Ok(MapEntityToDto(data));
   }
 
   // POST: api/movies
   [HttpPost]
-  public async Task<ActionResult<Movie>> CreateMovie(Movie movie)
+  public async Task<ActionResult<MovieDto>> CreateMovie(CreateMovieDto dto)
   {
-    movie.Id = Guid.NewGuid();
+    var data = MapDtoToEntity(dto);
 
-    _context.Movies.Add(movie);
+    _context.Movies.Add(data);
     await _context.SaveChangesAsync();
+
+    var result = MapEntityToDto(data);
 
     return CreatedAtAction(
         nameof(GetMovie),
-        new { id = movie.Id },
-        movie);
+        new { id = data.Id },
+        data);
   }
 
   // PUT: api/movies/{id}
   [HttpPut("{id}")]
-  public async Task<IActionResult> UpdateMovie(Guid id, Movie movie)
+  public async Task<IActionResult> UpdateMovie(Guid id, UpdateMovieDto dto)
   {
-    if (id != movie.Id)
-    {
-      return BadRequest();
-    }
+    var data = await _context.Movies.FindAsync(id);
 
-    var existingMovie = await _context.Movies.FindAsync(id);
-
-    if (existingMovie == null)
+    if (data == null)
     {
       return NotFound();
     }
 
-    existingMovie.Title = movie.Title;
-    existingMovie.Year = movie.Year;
-    existingMovie.Duration = movie.Duration;
+    if (id != data.Id)
+    {
+      return BadRequest();
+    }
+
+    data.Title = dto.Title;
+    data.Year = dto.Year;
+    data.Duration = dto.Duration;
 
     await _context.SaveChangesAsync();
 
@@ -88,16 +94,38 @@ public class MoviesController : ControllerBase
   [HttpDelete("{id}")]
   public async Task<IActionResult> DeleteMovie(Guid id)
   {
-    var movie = await _context.Movies.FindAsync(id);
+    var data = await _context.Movies.FindAsync(id);
 
-    if (movie == null)
+    if (data == null)
     {
       return NotFound();
     }
 
-    _context.Movies.Remove(movie);
+    _context.Movies.Remove(data);
     await _context.SaveChangesAsync();
 
     return NoContent();
+  }
+
+  private static MovieDto MapEntityToDto(Movie movie)
+  {
+    return new MovieDto()
+    {
+      Id = movie.Id,
+      Title = movie.Title,
+      Year = movie.Year,
+      Duration = movie.Duration
+    };
+  }
+
+  private static Movie MapDtoToEntity(CreateMovieDto dto)
+  {
+    return new Movie()
+    {
+      Id = Guid.NewGuid(),
+      Title = dto.Title,
+      Year = dto.Year,
+      Duration = dto.Duration
+    };
   }
 }
