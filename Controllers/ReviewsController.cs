@@ -1,10 +1,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MovieApi.Data;
+using MovieApi.DTOs.Review;
 using MovieApi.Models;
 
 namespace MovieApi.Controllers;
@@ -22,62 +24,65 @@ public class ReviewsController : ControllerBase
 
   // GET: api/reviews
   [HttpGet]
-  public async Task<ActionResult<IEnumerable<Review>>> GetReviews()
+  public async Task<ActionResult<IEnumerable<ReviewDto>>> GetReviews()
   {
-    var reviews = await _context.Reviews.ToListAsync();
+    var data = await _context.Reviews.ToListAsync();
 
-    return Ok(reviews);
+    var result = data.Select(MapEntityToDto).ToList();
+
+    return Ok(result);
   }
 
   // GET: api/reviews/{id}
   [HttpGet("{id}")]
-  public async Task<ActionResult<Review>> GetReview(Guid id)
+  public async Task<ActionResult<ReviewDto>> GetReview(Guid id)
   {
-    var review = await _context.Reviews
+    var data = await _context.Reviews
         .FirstOrDefaultAsync(a => a.Id == id);
 
-    if (review == null)
+    if (data == null)
     {
       return NotFound();
     }
 
-    return Ok(review);
+    return Ok(MapEntityToDto(data));
   }
 
   // POST: api/reviews
   [HttpPost]
-  public async Task<ActionResult<Review>> CreateReview(Review review)
+  public async Task<ActionResult<ReviewDto>> CreateReview(CreateReviewDto dto)
   {
-    review.Id = Guid.NewGuid();
+    var data = MapDtoToEntity(dto);
 
-    _context.Reviews.Add(review);
+    _context.Reviews.Add(data);
     await _context.SaveChangesAsync();
 
     return CreatedAtAction(
         nameof(GetReview),
-        new { id = review.Id },
-        review);
+        new { id = data.Id },
+        data);
   }
 
   // PUT: api/reviews/{id}
   [HttpPut("{id}")]
-  public async Task<IActionResult> UpdateReview(Guid id, Review review)
+  public async Task<IActionResult> UpdateReview(Guid id, UpdateReviewDto dto)
   {
-    if (id != review.Id)
-    {
-      return BadRequest();
-    }
 
-    var existingReview = await _context.Reviews.FindAsync(id);
+    var data = await _context.Reviews.FindAsync(id);
 
-    if (existingReview == null)
+    if (data == null)
     {
       return NotFound();
     }
 
-    existingReview.ReviewerName = review.ReviewerName;
-    existingReview.Comment = review.Comment;
-    existingReview.Rating = review.Rating;
+    if (id != data.Id)
+    {
+      return BadRequest();
+    }
+
+    data.ReviewerName = dto.ReviewerName;
+    data.Comment = dto.Comment;
+    data.Rating = dto.Rating;
 
     await _context.SaveChangesAsync();
 
@@ -99,5 +104,29 @@ public class ReviewsController : ControllerBase
     await _context.SaveChangesAsync();
 
     return NoContent();
+  }
+
+  private static Review MapDtoToEntity(CreateReviewDto dto)
+  {
+    return new Review()
+    {
+      Id = Guid.NewGuid(),
+      ReviewerName = dto.ReviewerName,
+      Comment = dto.Comment,
+      Rating = dto.Rating,
+      MovieId = dto.MovieId
+    };
+  }
+
+  private static ReviewDto MapEntityToDto(Review data)
+  {
+    return new ReviewDto()
+    {
+      Id = data.Id,
+      ReviewerName = data.ReviewerName,
+      Comment = data.Comment,
+      Rating = data.Rating,
+      MovieId = data.MovieId
+    };
   }
 }
