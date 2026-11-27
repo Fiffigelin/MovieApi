@@ -113,6 +113,47 @@ public class GenreController : ControllerBase
     return NoContent();
   }
 
+  [HttpGet("~/api/movies/{id}/genre")]
+  public async Task<ActionResult<GenreDto>> GetGenreByMovie(Guid id)
+  {
+    var data = await _context.MovieGenre.AsNoTracking().Where(g => g.MovieId == id).Include(g => g.Genre).ToListAsync();
+
+    if (data is null)
+    {
+      return NotFound();
+    }
+
+    var result = data.Select(d => MapEntityToDto(d.Genre)).ToList();
+
+    return Ok(result);
+  }
+
+  // POST: api/genre
+  [HttpPost("~/api/movie/{movieId}/genre/{genreId}")]
+  public async Task<ActionResult<GenreDto>> CreateGenre(Guid movieId, Guid genreId)
+  {
+    if (await IsAvailableToMovie(genreId))
+    {
+      return Conflict("This genre is already connected to the movie");
+    }
+
+    // todo later: check if movie exists by Id
+    // jag kommer komma på en massa saker att ändra
+    // varför satt jag så länge och funderade? XD 
+    // hade inte tänkt färdigt ändå XD
+
+    var data = new MovieGenre()
+    {
+      MovieId = movieId,
+      GenreId = genreId
+    };
+
+    _context.MovieGenre.Add(data);
+    await _context.SaveChangesAsync();
+
+    return NoContent();
+  }
+
   private static Genre MapDtoToEntity(string name, Guid? id = null)
   {
     return new Genre()
@@ -134,5 +175,10 @@ public class GenreController : ControllerBase
   private async Task<bool> IsNameUnique(string name)
   {
     return !await _context.Genre.AnyAsync(g => g.Name == name);
+  }
+
+  private async Task<bool> IsAvailableToMovie(Guid genreId)
+  {
+    return !await _context.MovieGenre.AnyAsync(g => g.GenreId == genreId);
   }
 }

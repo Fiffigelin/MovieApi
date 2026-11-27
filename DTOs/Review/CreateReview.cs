@@ -11,6 +11,4 @@ public class CreateReviewDto
 
   [Range(1, 5)]
   public int Rating { get; set; }
-
-  public required Guid MovieId { get; set; }
 }

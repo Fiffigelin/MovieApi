@@ -48,8 +48,7 @@ public class MovieDetailsController : ControllerBase
     return Ok(MapEntityToDto(data));
   }
 
-  // POST: api/moviedetails
-  [HttpPost]
+  [HttpPost("~/api/movies/{movieId}/moviedetails")]
   public async Task<ActionResult<MovieDetailsDto>> CreateMovieDetail(Guid movieId, CreateMovieDetailsDto dto)
   {
 
@@ -66,7 +65,6 @@ public class MovieDetailsController : ControllerBase
         data);
   }
 
-  // PUT: api/moviedetails/{id}
   [HttpPut("{id}")]
   public async Task<IActionResult> UpdateMovieDetail(Guid id, UpdateMovieDetailsDto dto)
   {
@@ -117,7 +115,6 @@ public class MovieDetailsController : ControllerBase
       Synopsis = movieDetails.Synopsis,
       Language = movieDetails.Language,
       Budget = movieDetails.Budget,
-      MovieId = movieDetails.MovieId
     };
   }
   private static MovieDetails MapDtoToEntity(Guid movieId, CreateMovieDetailsDto movieDetails)

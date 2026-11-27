@@ -48,11 +48,27 @@ public class ReviewsController : ControllerBase
     return Ok(MapEntityToDto(data));
   }
 
-  // POST: api/reviews
-  [HttpPost]
-  public async Task<ActionResult<ReviewDto>> CreateReview(CreateReviewDto dto)
+  // GET: api/movies/{id}/reviews
+  [HttpGet("~/api/movies/{id}/reviews")]
+  public async Task<ActionResult<ReviewDto>> GetReviewByMovie(Guid id)
   {
-    var data = MapDtoToEntity(dto);
+    var data = await _context.Reviews.Where(r => r.MovieId == id).ToListAsync();
+
+    if (data == null)
+    {
+      return NotFound();
+    }
+
+    var result = data.Select(MapEntityToDto).ToList();
+
+    return Ok(result);
+  }
+
+  // POST: api/movies/{id]/reviews
+  [HttpPost("~/api/movies/{id}/reviews")]
+  public async Task<ActionResult<ReviewDto>> CreateReview(Guid id, CreateReviewDto dto)
+  {
+    var data = MapDtoToEntity(id, dto);
 
     _context.Reviews.Add(data);
     await _context.SaveChangesAsync();
@@ -106,7 +122,7 @@ public class ReviewsController : ControllerBase
     return NoContent();
   }
 
-  private static Review MapDtoToEntity(CreateReviewDto dto)
+  private static Review MapDtoToEntity(Guid movieId, CreateReviewDto dto)
   {
     return new Review()
     {
@@ -114,7 +130,7 @@ public class ReviewsController : ControllerBase
       ReviewerName = dto.ReviewerName,
       Comment = dto.Comment,
       Rating = dto.Rating,
-      MovieId = dto.MovieId
+      MovieId = movieId
     };
   }
 
@@ -126,7 +142,6 @@ public class ReviewsController : ControllerBase
       ReviewerName = data.ReviewerName,
       Comment = data.Comment,
       Rating = data.Rating,
-      MovieId = data.MovieId
     };
   }
 }

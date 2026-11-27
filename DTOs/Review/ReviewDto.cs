@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace MovieApi.DTOs.Review;
 
@@ -10,8 +11,6 @@ public class ReviewDto
 
   public required string Comment { get; set; }
 
-  [ValidRating]
+  [Range(1, 3)]
   public int Rating { get; set; }
-
-  public required Guid MovieId { get; set; }
 }

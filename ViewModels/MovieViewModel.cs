@@ -1,23 +1,35 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using MovieApi.DTOs.Actor;
 using MovieApi.DTOs.Genre;
-using MovieApi.DTOs.Movie;
+using MovieApi.DTOs.MovieDetail;
+using MovieApi.DTOs.Review;
 
 namespace MovieApi.ViewModels;
 
 public class MovieViewModel
 {
-  [Required]
-  public required MovieDto Movie { get; set; }
+  public Guid Id { get; set; }
 
   [Required]
-  public required MovieDetailViewModel Details { get; set; }
+  [StringLength(100, MinimumLength = 1)]
+  public required string Title { get; set; }
 
   [Required]
-  public required IEnumerable<GenreDto> Genres { get; set; } = [];
+  [Range(1900, 2100)]
+  public required int Year { get; set; }
 
   [Required]
-  public required IEnumerable<MovieActorViewModel> Actors { get; set; } = [];
+  [ValidMovieDuration]
+  public required TimeSpan Duration { get; set; }
 
-  public required IEnumerable<ReviewViewModel> Reviews { get; set; } = [];
+  [Required]
+  public required MovieDetailsDto Details { get; set; }
+
+  [Required]
+  public required IEnumerable<string> Genres { get; set; } = [];
+
+  [Required]
+  public required IEnumerable<MovieActorDto> Actors { get; set; } = [];
 }

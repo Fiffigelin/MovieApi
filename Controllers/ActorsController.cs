@@ -109,6 +109,44 @@ public class ActorsController : ControllerBase
     return NoContent();
   }
 
+  [HttpGet("~/api/movies/{id}/actors")]
+  public async Task<ActionResult<ActorDto>> GetActorsByMovie(Guid id)
+  {
+    var data = await _context.MovieActors.Where(a => a.MovieId == id).Include(a => a.Actor).ToListAsync();
+
+    if (data is null)
+    {
+      return NotFound();
+    }
+
+    var result = data.Select(a => MapActorWithRole(a.Role, a.Actor)).ToList();
+
+    return Ok(result);
+  }
+
+  [HttpPost("~/api/movies/{movieId}/actors/{actorId}")]
+  public async Task<ActionResult<MovieActor>> AddActorToMovie(Guid movieId, Guid actorId, CreateMovieActorDto dto)
+  {
+    var actor = await _context.Actors.FirstOrDefaultAsync(a => a.Id == actorId);
+
+    if (actor is null)
+    {
+      return NotFound();
+    }
+
+    var data = MapMovieActorEntity(movieId, actorId, dto);
+
+    _context.MovieActors.Add(data);
+    await _context.SaveChangesAsync();
+
+    var result = MapActorWithRole(data.Role, data.Actor);
+
+    return CreatedAtAction(
+    nameof(GetActor),
+    new { id = result.Id },
+    result);
+  }
+
   private static Actor MapDtoToEntity(CreateActorDto dto)
   {
     return new Actor()
@@ -126,6 +164,28 @@ public class ActorsController : ControllerBase
       Id = actor.Id,
       Name = actor.Name,
       BirthYear = actor.BirthYear
+    };
+  }
+
+  private static MovieActorDto MapActorWithRole(string role, Actor actor)
+  {
+    return new MovieActorDto()
+    {
+      Id = actor.Id,
+      Name = actor.Name,
+      BirthYear = actor.BirthYear,
+      Role = role
+    };
+  }
+
+  private static MovieActor MapMovieActorEntity(Guid movieId, Guid actorId, CreateMovieActorDto dto)
+  {
+    return new MovieActor()
+    {
+      Id = Guid.NewGuid(),
+      MovieId = movieId,
+      ActorId = actorId,
+      Role = dto.Role
     };
   }
 }
