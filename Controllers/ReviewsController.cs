@@ -22,7 +22,10 @@ public class ReviewsController : ControllerBase
     _context = context;
   }
 
-  // GET: api/reviews
+  /// <summary>
+  /// Hämtar alla recensioner som finns registrerade.
+  /// </summary>
+  /// <returns>En lista med samtliga recensioner.</returns>
   [HttpGet]
   public async Task<ActionResult<IEnumerable<ReviewDto>>> GetReviews()
   {
@@ -33,7 +36,11 @@ public class ReviewsController : ControllerBase
     return Ok(result);
   }
 
-  // GET: api/reviews/{id}
+  /// <summary>
+  /// Hämtar en recension baserat på dess ID.
+  /// </summary>
+  /// <param name="id">ID för recensionen som ska hämtas.</param>
+  /// <returns>Recensionens namn, kommentar och betyg.</returns>
   [HttpGet("{id}")]
   public async Task<ActionResult<ReviewDto>> GetReview(Guid id)
   {
@@ -48,38 +55,57 @@ public class ReviewsController : ControllerBase
     return Ok(MapEntityToDto(data));
   }
 
-  // GET: api/movies/{id}/reviews
+  /// <summary>
+  /// Hämtar alla recensioner som tillhör en specifik film.
+  /// </summary>
+  /// <param name="id">ID för filmen vars recensioner ska hämtas.</param>
+  /// <returns>En lista med filmens recensioner.</returns>
   [HttpGet("~/api/movies/{id}/reviews")]
   public async Task<ActionResult<ReviewDto>> GetReviewByMovie(Guid id)
   {
     var data = await _context.Reviews.Where(r => r.MovieId == id).ToListAsync();
-
-    if (data == null)
-    {
-      return NotFound();
-    }
 
     var result = data.Select(MapEntityToDto).ToList();
 
     return Ok(result);
   }
 
-  // POST: api/movies/{id]/reviews
+  /// <summary>
+  /// Skapar en ny recension för en befintlig film.
+  /// </summary>
+  /// <param name="id">ID för filmen som recensionen ska kopplas till.</param>
+  /// <param name="dto">Recensentens namn, kommentar och betyg.</param>
+  /// <returns>Den skapade recensionen.</returns>
   [HttpPost("~/api/movies/{id}/reviews")]
   public async Task<ActionResult<ReviewDto>> CreateReview(Guid id, CreateReviewDto dto)
   {
+    var movieExists = await _context.Movies
+    .AnyAsync(m => m.Id == id);
+
+    if (!movieExists)
+    {
+      return NotFound();
+    }
+
     var data = MapDtoToEntity(id, dto);
 
     _context.Reviews.Add(data);
     await _context.SaveChangesAsync();
 
+    var result = MapEntityToDto(data);
+
     return CreatedAtAction(
         nameof(GetReview),
         new { id = data.Id },
-        data);
+        result);
   }
 
-  // PUT: api/reviews/{id}
+  /// <summary>
+  /// Uppdaterar en befintlig recension.
+  /// </summary>
+  /// <param name="id">ID för recensionen som ska uppdateras.</param>
+  /// <param name="dto">Recensionens nya namn, kommentar och betyg.</param>
+  /// <returns>204 om uppdateringen lyckades, annars 404 om recensionen inte hittades.</returns>
   [HttpPut("{id}")]
   public async Task<IActionResult> UpdateReview(Guid id, UpdateReviewDto dto)
   {
@@ -105,7 +131,11 @@ public class ReviewsController : ControllerBase
     return NoContent();
   }
 
-  // DELETE: api/reviews/{id}
+  /// <summary>
+  /// Tar bort en recension baserat på dess ID.
+  /// </summary>
+  /// <param name="id">ID för recensionen som ska tas bort.</param>
+  /// <returns>204 om recensionen togs bort, annars 404 om den inte hittades.</returns>
   [HttpDelete("{id}")]
   public async Task<IActionResult> DeleteReview(Guid id)
   {

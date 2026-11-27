@@ -22,7 +22,10 @@ public class MovieDetailsController : ControllerBase
     _context = context;
   }
 
-  // GET: api/moviedetails
+  /// <summary>
+  /// Hämtar alla filmdetaljer som finns registrerade.
+  /// </summary>
+  /// <returns>En lista med filmdetaljer, inklusive synopsis, språk och budget.</returns>
   [HttpGet]
   public async Task<ActionResult<IEnumerable<MovieDetailsDto>>> GetMovieDetails()
   {
@@ -33,7 +36,11 @@ public class MovieDetailsController : ControllerBase
     return Ok(result);
   }
 
-  // GET: api/moviedetails/{id}
+  /// <summary>
+  /// Hämtar filmdetaljer baserat på dess ID.
+  /// </summary>
+  /// <param name="id">ID för filmdetaljerna som ska hämtas.</param>
+  /// <returns>Filmens synopsis, språk och budget.</returns>
   [HttpGet("{id}")]
   public async Task<ActionResult<MovieDetailsDto>> GetMovieDetail(Guid id)
   {
@@ -48,9 +55,27 @@ public class MovieDetailsController : ControllerBase
     return Ok(MapEntityToDto(data));
   }
 
+  /// <summary>
+  /// Skapar detaljerad information för en befintlig film.
+  /// </summary>
+  /// <param name="movieId">ID för filmen som filmdetaljerna ska kopplas till.</param>
+  /// <param name="dto">Filmens synopsis, språk och budget.</param>
+  /// <returns>De skapade filmdetaljerna.</returns>
   [HttpPost("~/api/movies/{movieId}/moviedetails")]
   public async Task<ActionResult<MovieDetailsDto>> CreateMovieDetail(Guid movieId, CreateMovieDetailsDto dto)
   {
+    var movie = await _context.Movies
+        .FirstOrDefaultAsync(m => m.Id == movieId);
+
+    if (movie is null)
+    {
+      return NotFound();
+    }
+
+    if (movie.MovieDetails is not null)
+    {
+      return Conflict("This movie already has details");
+    }
 
     var data = MapDtoToEntity(movieId, dto);
 
@@ -62,9 +87,15 @@ public class MovieDetailsController : ControllerBase
     return CreatedAtAction(
         nameof(GetMovieDetail),
         new { id = data.Id },
-        data);
+        result);
   }
 
+  /// <summary>
+  /// Uppdaterar filmdetaljerna för en befintlig film.
+  /// </summary>
+  /// <param name="id">ID för filmdetaljerna som ska uppdateras.</param>
+  /// <param name="dto">De nya uppgifterna om filmens synopsis, språk och budget.</param>
+  /// <returns>204 om uppdateringen lyckades, annars 404 om filmdetaljerna inte hittades.</returns>
   [HttpPut("{id}")]
   public async Task<IActionResult> UpdateMovieDetail(Guid id, UpdateMovieDetailsDto dto)
   {
@@ -90,7 +121,11 @@ public class MovieDetailsController : ControllerBase
     return NoContent();
   }
 
-  // DELETE: api/moviedetails/{id}
+  /// <summary>
+  /// Tar bort filmdetaljer baserat på dess ID.
+  /// </summary>
+  /// <param name="id">ID för filmdetaljerna som ska tas bort.</param>
+  /// <returns>204 om filmdetaljerna togs bort, annars 404 om de inte hittades.</returns>
   [HttpDelete("{id}")]
   public async Task<IActionResult> DeleteMovieDetail(Guid id)
   {

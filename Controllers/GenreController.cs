@@ -22,18 +22,25 @@ public class GenreController : ControllerBase
     _context = context;
   }
 
-  // GET: api/genre
+  /// <summary>
+  /// Hämtar alla tillgängliga filmgenrer.
+  /// </summary>
+  /// <returns>En lista med samtliga genrer.</returns>
   [HttpGet]
   public async Task<ActionResult<IEnumerable<GenreDto>>> GetGenres()
   {
     var data = await _context.Genre.ToListAsync();
 
-    var result = data.Select(g => MapDtoToEntity(g.Name, g.Id)).ToList();
+    var result = data.Select(MapEntityToDto).ToList();
 
     return Ok(result);
   }
 
-  // GET: api/genre/{id}
+  /// <summary>
+  /// Hämtar en genre baserat på dess ID.
+  /// </summary>
+  /// <param name="id">ID för genren som ska hämtas.</param>
+  /// <returns>Genrens ID och namn.</returns>
   [HttpGet("{id}")]
   public async Task<ActionResult<GenreDto>> GetGenre(Guid id)
   {
@@ -48,7 +55,11 @@ public class GenreController : ControllerBase
     return Ok(MapEntityToDto(data));
   }
 
-  // POST: api/genre
+  /// <summary>
+  /// Skapar en ny filmgenre. Genrenamnet måste vara unikt.
+  /// </summary>
+  /// <param name="dto">Den nya genrens namn.</param>
+  /// <returns>Den skapade genren.</returns>
   [HttpPost]
   public async Task<ActionResult<GenreDto>> CreateGenre(CreateGenreDto dto)
   {
@@ -68,11 +79,16 @@ public class GenreController : ControllerBase
 
     return CreatedAtAction(
         nameof(GetGenre),
-        new { id = result.Id },
+        new { id = data.Id },
         result);
   }
 
-  // PUT: api/genre/{id}
+  /// <summary>
+  /// Uppdaterar namnet på en befintlig genre.
+  /// </summary>
+  /// <param name="id">ID för genren som ska uppdateras.</param>
+  /// <param name="dto">Genrens nya namn.</param>
+  /// <returns>204 om uppdateringen lyckades, annars 404 om genren inte hittades.</returns>
   [HttpPut("{id}")]
   public async Task<IActionResult> UpdateGenre(Guid id, UpdateGenreDto dto)
   {
@@ -96,7 +112,11 @@ public class GenreController : ControllerBase
     return NoContent();
   }
 
-  // DELETE: api/genre/{id}
+  /// <summary>
+  /// Tar bort en genre baserat på dess ID.
+  /// </summary>
+  /// <param name="id">ID för genren som ska tas bort.</param>
+  /// <returns>204 om genren togs bort, annars 404 om den inte hittades.</returns>
   [HttpDelete("{id}")]
   public async Task<IActionResult> DeleteGenre(Guid id)
   {
@@ -113,12 +133,17 @@ public class GenreController : ControllerBase
     return NoContent();
   }
 
+  /// <summary>
+  /// Hämtar alla genrer som är kopplade till en specifik film.
+  /// </summary>
+  /// <param name="id">ID för filmen vars genrer ska hämtas.</param>
+  /// <returns>En lista med filmens genrer.</returns>
   [HttpGet("~/api/movies/{id}/genre")]
   public async Task<ActionResult<GenreDto>> GetGenreByMovie(Guid id)
   {
     var data = await _context.MovieGenre.AsNoTracking().Where(g => g.MovieId == id).Include(g => g.Genre).ToListAsync();
 
-    if (data is null)
+    if (data.Count == 0)
     {
       return NotFound();
     }
@@ -128,11 +153,17 @@ public class GenreController : ControllerBase
     return Ok(result);
   }
 
-  // POST: api/genre
+  /// <summary>
+  /// Kopplar en befintlig genre till en film.
+  /// En genre kan inte kopplas till samma film flera gånger.
+  /// </summary>
+  /// <param name="movieId">ID för filmen som genren ska kopplas till.</param>
+  /// <param name="genreId">ID för genren som ska kopplas till filmen.</param>
+  /// <returns>204 om kopplingen skapades, annars 409 om genren redan är kopplad.</returns>
   [HttpPost("~/api/movie/{movieId}/genre/{genreId}")]
-  public async Task<ActionResult<GenreDto>> CreateGenre(Guid movieId, Guid genreId)
+  public async Task<ActionResult<GenreDto>> AddGenreToMovie(Guid movieId, Guid genreId)
   {
-    if (await IsAvailableToMovie(genreId))
+    if (await IsAvailableToMovie(movieId, genreId))
     {
       return Conflict("This genre is already connected to the movie");
     }
@@ -177,8 +208,9 @@ public class GenreController : ControllerBase
     return !await _context.Genre.AnyAsync(g => g.Name == name);
   }
 
-  private async Task<bool> IsAvailableToMovie(Guid genreId)
+  private async Task<bool> IsAvailableToMovie(Guid movieId, Guid genreId)
   {
-    return !await _context.MovieGenre.AnyAsync(g => g.GenreId == genreId);
+    return await _context.MovieGenre.AnyAsync(g =>
+        g.MovieId == movieId && g.GenreId == genreId);
   }
 }

@@ -32,4 +32,7 @@ public class MovieViewModel
 
   [Required]
   public required IEnumerable<MovieActorDto> Actors { get; set; } = [];
+
+  [Required]
+  public required IEnumerable<ReviewDto> Reviews { get; set; } = [];
 }
